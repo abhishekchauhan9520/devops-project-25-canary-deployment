@@ -1,0 +1,28 @@
+name: Validate Canary Deployment
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate project
+        run: bash tests/test_project.sh
+      - name: Parse Kubernetes manifests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in Path('k8s').glob('*.yaml'):
+              list(yaml.safe_load_all(path.read_text()))
+              print(f'parsed {path}')
+          PY
