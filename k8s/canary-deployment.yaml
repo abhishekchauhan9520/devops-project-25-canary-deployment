@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary
+  labels:
+    app: canary-demo
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canary-demo
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: canary-demo
+        track: canary
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/example/canary-demo:canary
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: canary
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 8
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary
+spec:
+  selector:
+    app: canary-demo
+    track: canary
+  ports:
+    - port: 80
+      targetPort: 8080
